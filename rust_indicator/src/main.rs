@@ -36,7 +36,7 @@ fn main() {
         run_detector_loop(r_clone);
     });
 
-    // 主线程：创建系统托盘并运行消息循环
+    // 主线程：根据配置决定是否创建系统托盘
     unsafe {
         // 先手动初始化一下 GDI+，因为托盘图标加载可能需要它
         let mut token = 0;
@@ -46,39 +46,47 @@ fn main() {
         };
         let _ = windows::Win32::Graphics::GdiPlus::GdiplusStartup(&mut token, &input, std::ptr::null_mut());
 
-        // 尝试加载图标
-        let h_instance = windows::Win32::System::LibraryLoader::GetModuleHandleW(None).unwrap();
-        // 这里的 1 对应 resource.rc 中的 ID
-        let mut icon = LoadIconW(h_instance, windows::core::PCWSTR(1 as _)).unwrap_or_else(|_| {
-            LoadIconW(None, IDI_APPLICATION).unwrap()
-        });
-        
-        // 1. 尝试从可执行文件同目录加载外部 icon.png (允许用户自定义)
-        let mut loaded = false;
-        if let Ok(exe_path) = std::env::current_exe() {
-            if let Some(dir) = exe_path.parent() {
-                let external_icon = dir.join("icon.png");
-                if let Some(h) = TrayManager::load_icon_from_file(&external_icon) {
-                    icon = h;
-                    loaded = true;
+        if config::tray_enable() {
+            // 尝试加载图标
+            let h_instance = windows::Win32::System::LibraryLoader::GetModuleHandleW(None).unwrap();
+            // 这里的 1 对应 resource.rc 中的 ID
+            let mut icon = LoadIconW(h_instance, windows::core::PCWSTR(1 as _)).unwrap_or_else(|_| {
+                LoadIconW(None, IDI_APPLICATION).unwrap()
+            });
+            
+            // 1. 尝试从可执行文件同目录加载外部 icon.png (允许用户自定义)
+            let mut loaded = false;
+            if let Ok(exe_path) = std::env::current_exe() {
+                if let Some(dir) = exe_path.parent() {
+                    let external_icon = dir.join("icon.png");
+                    if let Some(h) = TrayManager::load_icon_from_file(&external_icon) {
+                        icon = h;
+                        loaded = true;
+                    }
                 }
             }
-        }
 
-        // 2. 如果没找到外部图标，使用内嵌在 EXE 资源中的 ICO (ID 为 1)
-        if !loaded {
-            // 我们在 main 顶部已经尝试加载了基于资源的 icon，此处保持逻辑一致。
-            // 实际上由于 main 已经做好了，这里直接传进去即可。
-        }
+            // 2. 如果没找到外部图标，使用内嵌在 EXE 资源中的 ICO (ID 为 1)
+            if !loaded {
+                // 我们在 main 顶部已经尝试加载了基于资源的 icon，此处保持逻辑一致。
+                // 实际上由于 main 已经做好了，这里直接传进去即可。
+            }
 
-        let tray = TrayManager::new(icon);
-        
-        // 这将阻塞直到用户退出（主窗口收到 WM_QUIT）
-        tray.run_message_loop();
-        
-        // 退出后清理
-        running.store(false, Ordering::SeqCst);
-        tray.destroy();
+            let tray = TrayManager::new(icon);
+            
+            // 这将阻塞直到用户退出（主窗口收到 WM_QUIT）
+            tray.run_message_loop();
+            
+            // 退出后清理
+            running.store(false, Ordering::SeqCst);
+            tray.destroy();
+        } else {
+            // 不创建托盘，主线程进入等待循环
+            // 用户只能通过任务管理器结束进程
+            while running.load(Ordering::SeqCst) {
+                std::thread::sleep(Duration::from_millis(100));
+            }
+        }
         
         windows::Win32::Graphics::GdiPlus::GdiplusShutdown(token);
     }

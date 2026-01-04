@@ -14,6 +14,8 @@ pub struct Config {
     pub poll_state_interval_ms: u64,
     pub poll_track_interval_ms: u64,
 
+    pub tray_enable: bool,
+
     pub caret_enable: bool,
     pub caret_color_cn: u32,
     pub caret_color_en: u32,
@@ -37,6 +39,7 @@ impl Default for Config {
         Self {
             poll_state_interval_ms: 100,
             poll_track_interval_ms: 10,
+            tray_enable: true,
             caret_enable: true,
             caret_color_cn: parse_color("#FF7800A0"),
             caret_color_en: parse_color("#0078FF30"),
@@ -118,16 +121,23 @@ fn load_config() -> Config {
         if let Some(v) = get("poll",  "state_interval_ms") { if let Ok(n) = v.parse() { config.poll_state_interval_ms = n; } }
         if let Some(v) = get("poll",  "track_interval_ms") { if let Ok(n) = v.parse() { config.poll_track_interval_ms = n; } }
         
+        if let Some(v) = get("tray", "enable") { config.tray_enable = v == "true"; }
+        
         if let Some(v) = get("caret", "enable")   { config.caret_enable = v == "true"; }
         if let Some(v) = get("caret", "color_cn") { config.caret_color_cn = v.parse_color(); }
         if let Some(v) = get("caret", "color_en") { config.caret_color_en = v.parse_color(); }
         if let Some(v) = get("caret", "size")     { if let Ok(n) = v.parse() { config.caret_size = n; } }
+        if let Some(v) = get("caret", "offset_x") { if let Ok(n) = v.parse() { config.caret_offset_x = n; } }
+        if let Some(v) = get("caret", "offset_y") { if let Ok(n) = v.parse() { config.caret_offset_y = n; } }
         if let Some(v) = get("caret", "show_en")  { config.caret_show_en = v == "true"; }
 
         if let Some(v) = get("mouse", "enable")   { config.mouse_enable = v == "true"; }
         if let Some(v) = get("mouse", "color_cn") { config.mouse_color_cn = v.parse_color(); }
         if let Some(v) = get("mouse", "color_en") { config.mouse_color_en = v.parse_color(); }
         if let Some(v) = get("mouse", "size")     { if let Ok(n) = v.parse() { config.mouse_size = n; } }
+        if let Some(v) = get("mouse", "offset_x") { if let Ok(n) = v.parse() { config.mouse_offset_x = n; } }
+        if let Some(v) = get("mouse", "offset_y") { if let Ok(n) = v.parse() { config.mouse_offset_y = n; } }
+        if let Some(v) = get("mouse", "show_en")  { config.mouse_show_en = v == "true"; }
         if let Some(v) = get("mouse", "target_cursors") {
             config.mouse_target_cursors = v.trim_matches(|c| c == '[' || c == ']')
                 .split(',').filter_map(|s| s.trim().parse().ok()).collect();
@@ -145,6 +155,9 @@ fn generate_toml_template() -> String {
 [poll]
 state_interval_ms = 100   # 状态检测间隔 (ms)
 track_interval_ms = 10    # 位置追踪间隔 (ms)
+
+[tray]
+enable = true               # 是否显示托盘图标 (false 时完全后台运行，只能通过任务管理器结束)
 
 [caret]
 enable = true               # 是否启用文本光标提示
@@ -176,6 +189,7 @@ pub fn get() -> &'static Config { CONFIG.get_or_init(load_config) }
 
 pub fn state_poll_interval_ms() -> u64 { get().poll_state_interval_ms }
 pub fn track_poll_interval_ms() -> u64 { get().poll_track_interval_ms }
+pub fn tray_enable() -> bool { get().tray_enable }
 pub fn caret_enable() -> bool { get().caret_enable }
 pub fn caret_color_cn() -> u32 { get().caret_color_cn }
 pub fn caret_color_en() -> u32 { get().caret_color_en }
