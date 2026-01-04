@@ -29,7 +29,7 @@
 
 ## 直接运行
 
-到 releases 界面下载已编译好的 exe 文件，双击运行即可。
+到 releases 界面下载 [已编译好的 exe](https://github.com/HaujetZhao/IME_Indicator/releases/latest/download/IME-Indicator.exe) 文件，双击运行即可。
 
 ## 自行编译 (Rust 版)
 
