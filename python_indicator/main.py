@@ -1,4 +1,5 @@
 import time
+import json
 import ctypes
 from win32_api import user32, wintypes
 import config
@@ -6,6 +7,29 @@ from ime_detector import is_chinese_mode
 from caret_detector import CaretDetector
 from cursor_detector import CursorDetector
 from overlay import IndicatorOverlay
+
+def setup_mqtt():
+    if not config.MQTT_ENABLE:
+        return None
+    try:
+        import paho.mqtt.client as mqtt
+        client = mqtt.Client()
+        client.connect(config.MQTT_BROKER, config.MQTT_PORT, keepalive=60)
+        client.loop_start()
+        print(f" - MQTT LED: ON ({config.MQTT_BROKER}:{config.MQTT_PORT})")
+        return client
+    except Exception as e:
+        print(f" - MQTT LED: FAILED ({e})")
+        return None
+
+def publish_ime_led(mqtt_client, is_chinese):
+    if not mqtt_client:
+        return
+    payload = config.MQTT_LED_CN if is_chinese else config.MQTT_LED_EN
+    try:
+        mqtt_client.publish(config.MQTT_TOPIC, json.dumps(payload), retain=True)
+    except Exception:
+        pass
 
 def main():
     caret_detector = CaretDetector()
@@ -28,10 +52,14 @@ def main():
     print("IME Indicator started.")
     if config.CARET_ENABLE: print(f" - Caret indicator: ON (size:{config.CARET_SIZE})")
     if config.MOUSE_ENABLE: print(f" - Mouse indicator: ON (size:{config.MOUSE_SIZE})")
+
+    mqtt_client = setup_mqtt()
+
     print("Press Ctrl+C to stop.")
 
     last_state_check_time = 0
     chinese_mode = False
+    last_mqtt_state = None
 
     caret_active = False
     mouse_active = False
@@ -43,6 +71,11 @@ def main():
             # --- A. State detection (100ms) ---
             if current_time - last_state_check_time >= config.STATE_POLL_INTERVAL:
                 chinese_mode = is_chinese_mode()
+
+                # MQTT LED (only on state change)
+                if chinese_mode != last_mqtt_state:
+                    last_mqtt_state = chinese_mode
+                    publish_ime_led(mqtt_client, chinese_mode)
 
                 # Caret
                 if config.CARET_ENABLE:
@@ -84,6 +117,9 @@ def main():
     finally:
         if caret_overlay: caret_overlay.cleanup()
         if mouse_overlay: mouse_overlay.cleanup()
+        if mqtt_client:
+            mqtt_client.loop_stop()
+            mqtt_client.disconnect()
 
 if __name__ == "__main__":
     try:

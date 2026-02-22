@@ -24,3 +24,11 @@ MOUSE_SHOW_EN = True
 
 # Cursor shapes to track (not used - cursor check bypassed)
 MOUSE_TARGET_CURSORS = [OCR_IBEAM, OCR_NORMAL]
+
+# ============ 3. MQTT LED ============
+MQTT_ENABLE = True
+MQTT_BROKER = "192.168.88.10"
+MQTT_PORT = 1883
+MQTT_TOPIC = "claude/led"
+MQTT_LED_CN = {"r": 255, "g": 13, "b": 0, "pattern": "solid", "duration": 9999}    # Orange (calibrated)
+MQTT_LED_EN = {"r": 100, "g": 180, "b": 255, "pattern": "solid", "duration": 9999}  # Light blue
