@@ -83,6 +83,12 @@ def main():
                     with open(config.IME_STATE_FILE, 'w') as f:
                         f.write('zh' if chinese_mode else 'en')
                     prev_chinese_mode = chinese_mode
+                    # MQTT publish for tmux (instant)
+                    if mqtt_client:
+                        try:
+                            mqtt_client.publish(config.MQTT_IME_TOPIC, 'zh' if chinese_mode else 'en', retain=True)
+                        except Exception:
+                            pass
 
                 # Caret
                 if config.CARET_ENABLE:

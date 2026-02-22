@@ -36,3 +36,4 @@ MQTT_LED_EN = {"r": 100, "g": 180, "b": 255, "pattern": "solid", "duration": 999
 # ============ 4. tmux bridge ============
 # IME state file, read by WSL tmux via /mnt/c/Temp/ime_state
 IME_STATE_FILE = r"C:\Temp\ime_state"
+MQTT_IME_TOPIC = "ime/state"
