@@ -60,6 +60,7 @@ def main():
     last_state_check_time = 0
     chinese_mode = False
     last_mqtt_state = None
+    prev_chinese_mode = None
 
     caret_active = False
     mouse_active = False
@@ -76,6 +77,12 @@ def main():
                 if chinese_mode != last_mqtt_state:
                     last_mqtt_state = chinese_mode
                     publish_ime_led(mqtt_client, chinese_mode)
+
+                # Write IME state file (for tmux bridge)
+                if chinese_mode != prev_chinese_mode:
+                    with open(config.IME_STATE_FILE, 'w') as f:
+                        f.write('zh' if chinese_mode else 'en')
+                    prev_chinese_mode = chinese_mode
 
                 # Caret
                 if config.CARET_ENABLE:
