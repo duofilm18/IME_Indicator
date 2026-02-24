@@ -1,7 +1,7 @@
 from win32_api import OCR_IBEAM, OCR_NORMAL
 
 # ============ General ============
-STATE_POLL_INTERVAL = 0.1   # 100ms
+STATE_POLL_INTERVAL = 0.03  # 30ms
 TRACK_POLL_INTERVAL = 0.01  # 10ms
 
 # ============ 1. Caret Indicator ============
